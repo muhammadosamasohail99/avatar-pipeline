@@ -1,45 +1,59 @@
+<div align="center">
+
 # Avatar Pipeline
 
-An AI-powered video production pipeline that takes a script from Airtable and produces a fully edited, captioned, and exported video — with a human-in-the-loop review gate at every major step.
+**End-to-end AI video production — script to delivered file, zero manual editing.**
 
-Built with FastAPI, HTMX, ElevenLabs, HeyGen, Pexels, Google Gemini, and FFmpeg. No frontend build tooling — plain HTML/JS served by FastAPI.
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![FFmpeg](https://img.shields.io/badge/FFmpeg-required-007808?style=flat-square&logo=ffmpeg&logoColor=white)](https://ffmpeg.org)
+[![License](https://img.shields.io/badge/License-Private-red?style=flat-square)](#license)
+
+</div>
 
 ---
 
-## Overview
+Takes a script from Airtable. Synthesizes voice, generates an AI avatar, sources B-roll, burns in captions, assembles and exports dual-format video, then delivers to Dropbox — with a human-in-the-loop review gate at every major stage.
+
+Built with FastAPI, HTMX, ElevenLabs, HeyGen, Pexels, Google Gemini, and FFmpeg. No frontend build tooling. No bundler. Plain HTML served by FastAPI.
+
+---
+
+## Pipeline
 
 ```
-Airtable (script ready)
-    └─► Voice synthesis       (ElevenLabs)
-            └─► Gate 1: Audio review
-    └─► Avatar generation     (HeyGen)
-            └─► Gate 2: Avatar review
-    └─► B-roll sourcing       (Pexels + Runway)
-            └─► Gate 3: B-roll selection
-    └─► Captions              (WhisperX + Gemini emphasis)
-            └─► Gate 4: Caption editor
-    └─► Assembly              (FFmpeg filter_complex)
-            └─► Gate 5: Composite review
-    └─► Export                (16:9 + 9:16 reframe, loudnorm)
-            └─► Gate 6: Final review
-    └─► Delivery              (Dropbox /Content/ready/)
+Airtable  ──►  Voice (ElevenLabs)
+                    └── Gate 1: Audio review
+               Avatar (HeyGen v3)
+                    └── Gate 2: Avatar review
+               B-roll (Pexels + Runway)
+                    └── Gate 3: B-roll selection
+               Captions (WhisperX + Gemini)
+                    └── Gate 4: Caption editor
+               Assembly (FFmpeg filter_complex)
+                    └── Gate 5: Composite review
+               Export (16:9 + 9:16 reframe)
+                    └── Gate 6: Final review
+               Delivery (Dropbox)
 ```
 
-Every stage is async. The app polls Airtable every 5 minutes, picks up new scripts, and processes up to 2 jobs concurrently. You review and approve at each gate through a local web UI at `http://localhost:8000`.
+Every stage runs async. The app polls Airtable every 5 minutes, processes up to 2 jobs concurrently, and recovers in-progress jobs automatically on restart. You review and approve at each gate through a local web UI at `http://localhost:8000`.
 
 ---
 
 ## Features
 
-- **End-to-end automation** — from raw script to delivered video files with zero manual editing
-- **6 review gates** — approve, regenerate, or edit at every major stage before the pipeline advances
-- **Dual format output** — 16:9 master + 9:16 center-crop reframe generated automatically at export
-- **Smart captions** — phrase-chunked subtitles with Gemini-powered emphasis highlighting
-- **Multi-source B-roll** — Pexels stock footage, Runway AI-generated clips, or screen recordings
-- **Format routing** — Selfie, Screen Recording, and Split Screen layouts handled automatically
-- **Live dashboard** — SSE-powered job status updates, cost tracking, and macOS notifications
-- **Resilient** — orphan job recovery on startup, 30-day automatic archive rotation
-- **Zero build tooling** — plain HTML + HTMX frontend, no npm or bundler required
+| | |
+|---|---|
+| **End-to-end automation** | Raw script → delivered video with no manual editing |
+| **6 review gates** | Approve, regenerate, or edit at every stage before advancing |
+| **Dual format export** | 16:9 master + 9:16 center-crop reframe, generated automatically |
+| **Smart captions** | Phrase-chunked subtitles with Gemini-powered emphasis highlighting |
+| **Multi-source B-roll** | Pexels stock footage, Runway AI-generated clips, or screen recordings |
+| **Format routing** | Selfie, Screen Recording, and Split Screen layouts handled automatically |
+| **Live dashboard** | SSE-powered job updates, per-job cost tracking, macOS notifications |
+| **Resilient** | Orphan job recovery on startup, 30-day automatic archive rotation |
+| **Zero build tooling** | Plain HTML + HTMX — no npm, no bundler |
 
 ---
 
@@ -48,13 +62,13 @@ Every stage is async. The app polls Airtable every 5 minutes, picks up new scrip
 | Layer | Technology |
 |---|---|
 | API server | FastAPI + Uvicorn |
-| Frontend | Plain HTML, HTMX, SSE |
+| Frontend | HTML, HTMX, Server-Sent Events |
 | Voice synthesis | ElevenLabs |
 | Avatar video | HeyGen v3 |
-| B-roll (stock) | Pexels |
-| B-roll (AI-generated) | Runway ML |
+| B-roll — stock | Pexels |
+| B-roll — AI generated | Runway ML |
 | Caption emphasis | Google Gemini 2.5 Flash |
-| Video processing | FFmpeg |
+| Video processing | FFmpeg + WhisperX |
 | Job storage | Airtable |
 | Delivery | Dropbox |
 
@@ -62,211 +76,175 @@ Every stage is async. The app polls Airtable every 5 minutes, picks up new scrip
 
 ## Prerequisites
 
-### System Dependencies
+**System dependencies**
 
-- **Python 3.11+**
-- **FFmpeg** — must be on your `PATH`
+```bash
+# macOS
+brew install ffmpeg
 
-  ```bash
-  # macOS
-  brew install ffmpeg
+# Ubuntu / Debian
+sudo apt install ffmpeg
 
-  # Ubuntu/Debian
-  sudo apt install ffmpeg
-  ```
+# WhisperX (caption transcription)
+pip install whisperx
 
-- **WhisperX** — required for caption generation
+# Inter font — place .ttf files in assets/fonts/
+# Download: https://rsms.me/inter/
+```
 
-  ```bash
-  pip install whisperx
-  ```
+**API keys required**
 
-- **Inter font files** — place `.ttf` files in `assets/fonts/`
-  - Download from [rsms.me/inter](https://rsms.me/inter/)
-
-### API Keys Required
-
-| Service | Purpose | Where to Get It |
-|---|---|---|
-| **Airtable** | Script source + status updates | [airtable.com](https://airtable.com) → Account → API |
-| **ElevenLabs** | Voice synthesis | [elevenlabs.io](https://elevenlabs.io) → Profile → API Keys |
-| **HeyGen** | AI avatar video generation | [heygen.com](https://heygen.com) → Settings → API |
-| **Pexels** | Stock B-roll footage | [pexels.com/api](https://www.pexels.com/api/) |
-| **Runway ML** | AI-generated B-roll | [runwayml.com](https://runwayml.com) |
-| **Google Gemini** | Caption emphasis scoring | [aistudio.google.com](https://aistudio.google.com) → Get API Key |
-| **Dropbox** | Delivery destination | [dropbox.com/developers](https://www.dropbox.com/developers) → Create App → OAuth2 token |
+| Service | Purpose |
+|---|---|
+| Airtable | Script source + status updates |
+| ElevenLabs | Voice synthesis |
+| HeyGen | AI avatar video generation |
+| Pexels | Stock B-roll footage |
+| Runway ML | AI-generated B-roll |
+| Google Gemini | Caption emphasis scoring |
+| Dropbox | Delivery destination |
 
 ---
 
-## Installation
+## Quickstart
 
 ```bash
-git clone https://github.com/SuperDinar/avatar-pipeline-2.git
-cd avatar-pipeline-2
+git clone https://github.com/muhammadosamasohail99/avatar-pipeline.git
+cd avatar-pipeline
 
 python -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
+source venv/bin/activate      # Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 ```
 
----
-
-## Configuration
-
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env` and fill in your keys:
 
 ```bash
-touch .env
+cp .env.example .env
 ```
 
-Then populate it:
-
 ```env
-# Airtable
-AIRTABLE_API_KEY=your_key_here
-AIRTABLE_BASE_ID=appiE5ew3MElVDS9g
-AIRTABLE_TABLE_ID=tblgfx7nmAMKIL0Km
+AIRTABLE_API_KEY=
+AIRTABLE_BASE_ID=
+AIRTABLE_TABLE_ID=
 
-# ElevenLabs
-ELEVENLABS_API_KEY=your_key_here
-ELEVENLABS_VOICE_ID=your_cloned_voice_id
+ELEVENLABS_API_KEY=
+ELEVENLABS_VOICE_ID=
 
-# HeyGen
-HEYGEN_API_KEY=your_key_here
-HEYGEN_AVATAR_ID=your_trained_avatar_id
+HEYGEN_API_KEY=
+HEYGEN_AVATAR_ID=
 
-# Pexels
-PEXELS_API_KEY=your_key_here
+PEXELS_API_KEY=
+RUNWAY_API_KEY=
 
-# Runway ML
-RUNWAY_API_KEY=your_key_here
-
-# Google Gemini
-GEMINI_API_KEY=your_key_here
+GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash-lite
 
-# Dropbox
-DROPBOX_TOKEN=your_oauth2_token
+DROPBOX_TOKEN=
 DROPBOX_DELIVERY_PATH=/Content/ready/
 ```
 
----
-
-## Running the App
+Start the server:
 
 ```bash
 uvicorn main:app --reload --port 8000
 ```
 
-Open `http://localhost:8000`. You'll see a live dashboard of all jobs with their current pipeline status and per-job cost.
-
-The app auto-recovers any in-progress jobs from a previous session on startup.
+Open `http://localhost:8000`.
 
 ---
 
-## Seeding a Test Job
+## Review Gates
 
-If you don't have a live Airtable script yet, seed a dummy job to inspect the UI:
-
-```bash
-python make_test_job.py
-# Prints the job_id, e.g. "2026-05-16-my-test-video"
-```
-
-Then navigate to any gate directly:
-
-```
-http://localhost:8000/jobs/2026-05-16-my-test-video/gate1
-http://localhost:8000/jobs/2026-05-16-my-test-video/gate2
-```
-
----
-
-## The 6 Review Gates
-
-Each gate lives at `/jobs/{job_id}/gate{N}`. Review the previous stage's output, then approve, regenerate, or edit before the pipeline continues.
+Each gate lives at `/jobs/{job_id}/gate{N}`.
 
 | Gate | Reviews | Actions |
 |---|---|---|
-| **Gate 1** | Voice audio — waveform, duration, silence check | Approve → avatar, Regenerate, Edit |
-| **Gate 2** | Avatar video — integrity checks, frame quality | Approve → B-roll, Regenerate (max 5×) |
-| **Gate 3** | B-roll grid per segment | Pick, Skip, Refresh, or Upload screen recording |
-| **Gate 4** | Captions — per-word emphasis toggle, re-render preview | Re-render, Approve → assembly |
-| **Gate 5** | Full composite video — flag timestamps, async re-render | Flag issues, Re-render, Approve → export |
-| **Gate 6** | Final 16:9 + 9:16 side-by-side, synchronized scrub | Deliver to Dropbox |
+| **1 — Audio** | Waveform, duration, silence check | Approve → avatar, Regenerate, Edit script |
+| **2 — Avatar** | Frame integrity, quality checks | Approve → B-roll, Regenerate (max 5×) |
+| **3 — B-roll** | Per-segment clip grid | Pick, Skip, Refresh, Upload screen recording |
+| **4 — Captions** | Per-word emphasis toggle, re-render preview | Re-render, Approve → assembly |
+| **5 — Composite** | Full video with flag-timestamp tool | Flag issues, Async re-render, Approve → export |
+| **6 — Export** | 16:9 + 9:16 side-by-side, synchronized scrub | Deliver to Dropbox |
+
+**Seed a test job** (no Airtable required):
+
+```bash
+python make_test_job.py
+# → job_id: 2026-05-16-my-test-video
+
+# Navigate directly to any gate:
+open http://localhost:8000/jobs/2026-05-16-my-test-video/gate1
+```
 
 ---
 
 ## Airtable Schema
 
-The pipeline expects these fields in your Airtable base:
-
 | Field | Type | Notes |
 |---|---|---|
 | `Title` | Single line text | Used as the job slug |
-| `Script` | Long text | The full video script |
-| `Pipeline Status` | Single select | Pipeline writes: `Processing`, `Filming`, `Ready to Post`, `Needs Edit` |
-| `Visual Format` | Single select | `Selfie`, `Screen Recording`, or `Split Screen` |
-
-Base ID: `appiE5ew3MElVDS9g` · Table ID: `tblgfx7nmAMKIL0Km`
+| `Script` | Long text | Full video script |
+| `Pipeline Status` | Single select | `Processing` · `Filming` · `Ready to Post` · `Needs Edit` |
+| `Visual Format` | Single select | `Selfie` · `Screen Recording` · `Split Screen` |
 
 ---
 
 ## Project Structure
 
 ```
-avatar-pipeline-2/
-├── main.py                  # FastAPI app, all routes, SSE live updates
-├── config.py                # Settings, pipeline tuning constants
+avatar-pipeline/
+├── main.py               # FastAPI app, routes, SSE live updates
+├── config.py             # Settings, pipeline constants
 ├── requirements.txt
 │
-├── pipeline/                # Core pipeline stages
-│   ├── ingest.py            # Airtable polling, job creation, status locking
-│   ├── job_state.py         # JobState, CostLedger, ActiveRegistry
-│   ├── voice.py             # ElevenLabs voice synthesis
-│   ├── avatar.py            # HeyGen v3 avatar generation
-│   ├── broll.py             # Pexels + Runway sourcing, relevance scoring
-│   ├── captions.py          # WhisperX transcription + Gemini emphasis
-│   ├── assembly.py          # FFmpeg filter_complex (B-roll + caption burn-in)
-│   ├── export.py            # loudnorm, 16:9 master, 9:16 reframe, Dropbox
-│   ├── gates.py             # Pre-check validators for gate views
-│   ├── routing.py           # Selfie / Screen Recording / Split Screen plans
-│   ├── notifications.py     # macOS osascript + Airtable status + SSE badge
-│   └── recovery.py          # Orphan resume on startup, 30-day archive rotation
+├── pipeline/
+│   ├── ingest.py         # Airtable polling, job creation, status locking
+│   ├── job_state.py      # JobState, CostLedger, ActiveRegistry
+│   ├── voice.py          # ElevenLabs voice synthesis
+│   ├── avatar.py         # HeyGen v3 avatar generation
+│   ├── broll.py          # Pexels + Runway sourcing, relevance scoring
+│   ├── captions.py       # WhisperX transcription + Gemini emphasis
+│   ├── assembly.py       # FFmpeg filter_complex (B-roll + caption burn-in)
+│   ├── export.py         # loudnorm, 16:9 master, 9:16 reframe, Dropbox
+│   ├── gates.py          # Pre-check validators for gate views
+│   ├── routing.py        # Selfie / Screen Recording / Split Screen plans
+│   ├── notifications.py  # macOS osascript + Airtable status + SSE badge
+│   └── recovery.py       # Orphan resume, 30-day archive rotation
 │
-├── modules/                 # Shared utilities
-│   ├── ass_writer.py        # Generates .ASS subtitle files from phrase data
-│   ├── ffmpeg_utils.py      # FFmpeg wrappers (duration, loudnorm, reframe)
-│   ├── elevenlabs_client.py # ElevenLabs TTS API wrapper
-│   ├── gemini_client.py     # Google Gemini client helper
-│   └── openai_client.py     # Azure OpenAI client helper (optional fallback)
+├── modules/
+│   ├── ass_writer.py     # .ASS subtitle file generation
+│   ├── ffmpeg_utils.py   # FFmpeg wrappers (duration, loudnorm, reframe)
+│   ├── elevenlabs_client.py
+│   ├── gemini_client.py
+│   └── openai_client.py  # Azure OpenAI fallback
 │
 ├── workers/
-│   └── job_runner.py        # Asyncio worker pool (concurrency=2)
+│   └── job_runner.py     # Asyncio worker pool (concurrency = 2)
 │
-├── static/                  # Frontend (plain HTML + HTMX, no build step)
-│   ├── index.html           # Jobs dashboard
-│   ├── base.html            # Shared layout
+├── static/               # Plain HTML + HTMX — no build step
+│   ├── index.html        # Jobs dashboard
+│   ├── base.html
 │   ├── style.css
-│   └── gates/               # One HTML file per review gate (gate1–gate6)
+│   └── gates/            # gate1.html – gate6.html
 │
-├── tests/                   # pytest suite — all passing
-├── jobs/                    # Per-job working directories (auto-created)
-├── archive/                 # Completed jobs older than 30 days (auto-rotated)
-├── assets/fonts/            # Inter .ttf font files (add manually)
+├── tests/                # pytest suite (all passing, no real credentials needed)
+├── jobs/                 # Per-job working directories (auto-created)
+├── archive/              # Jobs older than 30 days (auto-rotated)
+├── assets/fonts/         # Inter .ttf files (add manually)
 └── logs/
 ```
 
 ---
 
-## Running Tests
+## Tests
 
 ```bash
 pytest tests/ -v
 ```
 
-All tests pass. Mocks cover all external APIs (ElevenLabs, HeyGen, Pexels, Runway, Dropbox, Gemini) — no real credentials needed to run the suite.
+All tests pass. Every external API (ElevenLabs, HeyGen, Pexels, Runway, Dropbox, Gemini) is mocked — no real credentials needed to run the suite.
 
 ---
 
