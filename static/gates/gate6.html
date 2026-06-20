@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+  <form hx-post="/jobs/{{ job.job_id }}/gate6/back" style="margin:0">
+    <button class="secondary" style="font-size:13px;padding:6px 12px;white-space:nowrap">← Gate 5 (Composite)</button>
+  </form>
+  <h2 style="margin:0">Gate 6 — Export Review: {{ job.title }}</h2>
+</div>
+
+<div style="margin-bottom:12px;display:flex;gap:8px">
+  <button id="btn-both"  class="mode-btn active"  onclick="setMode('both')">Both (synced)</button>
+  <button id="btn-16x9"  class="mode-btn secondary" onclick="setMode('16x9')">16:9 only</button>
+  <button id="btn-9x16"  class="mode-btn secondary" onclick="setMode('9x16')">9:16 only</button>
+</div>
+
+<div class="card">
+  <div id="pane-both" style="display:flex;gap:20px;align-items:flex-start">
+    <div>
+      <h3 style="margin-top:0">16:9 Master</h3>
+      <video id="v16" controls width="560" src="/jobs/{{ job.job_id }}/file/final_16x9.mp4"></video>
+    </div>
+    <div>
+      <h3 style="margin-top:0">9:16 Reframe</h3>
+      <video id="v9s" controls width="200" src="/jobs/{{ job.job_id }}/file/final_9x16.mp4"></video>
+    </div>
+  </div>
+  <div id="pane-16x9" style="display:none">
+    <h3 style="margin-top:0">16:9 Master</h3>
+    <video id="v16solo" controls width="800" src="/jobs/{{ job.job_id }}/file/final_16x9.mp4"></video>
+  </div>
+  <div id="pane-9x16" style="display:none">
+    <h3 style="margin-top:0">9:16 Reframe</h3>
+    <video id="v9solo" controls width="360" src="/jobs/{{ job.job_id }}/file/final_9x16.mp4"></video>
+  </div>
+</div>
+
+<div class="card">
+  {% for c in checks %}<div class="precheck {{ c.status }}">{{ c.message }}</div>{% endfor %}
+</div>
+<form hx-post="/jobs/{{ job.job_id }}/gate6/decision" hx-swap="outerHTML">
+  <button class="primary-action">Deliver to Dropbox</button>
+</form>
+
+<style>
+.mode-btn { padding: 6px 14px; font-size: 13px; }
+.mode-btn.active { background: #111827; color: white; border-color: #111827; }
+</style>
+
+<script>
+  // Synced playback for the "both" pane
+  const v16 = document.getElementById('v16');
+  const v9s = document.getElementById('v9s');
+  v16.addEventListener('seeked', () => { v9s.currentTime = v16.currentTime; });
+  v16.addEventListener('play',   () => { v9s.play(); });
+  v16.addEventListener('pause',  () => { v9s.pause(); });
+  v9s.addEventListener('seeked', () => { v16.currentTime = v9s.currentTime; });
+  v9s.addEventListener('play',   () => { v16.play(); });
+  v9s.addEventListener('pause',  () => { v16.pause(); });
+
+  function pauseAll() {
+    [v16, v9s,
+     document.getElementById('v16solo'),
+     document.getElementById('v9solo')].forEach(v => { if (v) v.pause(); });
+  }
+
+  function setMode(mode) {
+    pauseAll();
+    document.getElementById('pane-both').style.display = mode === 'both' ? 'flex' : 'none';
+    document.getElementById('pane-16x9').style.display = mode === '16x9' ? 'block' : 'none';
+    document.getElementById('pane-9x16').style.display = mode === '9x16' ? 'block' : 'none';
+    ['both','16x9','9x16'].forEach(m => {
+      const btn = document.getElementById('btn-' + m);
+      btn.classList.toggle('active',    m === mode);
+      btn.classList.toggle('secondary', m !== mode);
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+jobs/
+archive/
+logs/
+.pytest_cache/
+venv/
+*.mp4
+*.mp3
+*.wav
+active.json
+active.json.lock
+cost-ledger.json
+cost-ledger.json.lock
+.claude/

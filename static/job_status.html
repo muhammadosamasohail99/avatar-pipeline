@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} — Avatar Pipeline{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+  <div>
+    <a href="/" style="font-size:13px;color:var(--body);text-decoration:none">← Dashboard</a>
+    <h2 style="margin:4px 0 0">{{ job.title }}</h2>
+  </div>
+</div>
+<div hx-get="/jobs/{{ job.job_id }}/status-fragment"
+     hx-trigger="load"
+     hx-swap="outerHTML">
+  <div class="card"><p style="margin:0">Loading…</p></div>
+</div>
+<script>
+  // Elapsed timer — starts when this page loads, survives every HTMX poll swap
+  // because it queries #sc-elapsed fresh each tick rather than holding a reference.
+  (function () {
+    var start = Date.now();
+    setInterval(function () {
+      var el = document.getElementById('sc-elapsed');
+      if (!el) return;
+      var s = Math.floor((Date.now() - start) / 1000);
+      el.textContent = Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60);
+    }, 1000);
+  })();
+</script>
+{% endblock %}

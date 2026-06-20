@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+  <form hx-post="/jobs/{{ job.job_id }}/gate2/back" style="margin:0">
+    <button class="secondary" style="font-size:13px;padding:6px 12px;white-space:nowrap">← Gate 1 (Audio)</button>
+  </form>
+  <h2 style="margin:0">Gate 2 — Avatar Review: {{ job.title }}</h2>
+</div>
+<div class="card">
+  <video controls width="800" src="/jobs/{{ job.job_id }}/file/avatar.mp4"></video>
+  <p>Regenerations: {{ job.regeneration_counts.avatar }} / 5</p>
+</div>
+<div class="card">
+  <h3>Pre-checks</h3>
+  {% for c in checks %}<div class="precheck {{ c.status }}">{{ c.message }}</div>{% endfor %}
+</div>
+<form hx-post="/jobs/{{ job.job_id }}/gate2/decision" hx-swap="outerHTML">
+  <button name="action" value="approve" class="primary-action">Approve to B-roll</button>
+  {% if job.regeneration_counts.avatar < 5 %}
+    <button name="action" value="regenerate" class="secondary">Regenerate Avatar</button>
+  {% else %}
+    <button name="action" value="override" class="secondary">Override cap</button>
+  {% endif %}
+</form>
+{% endblock %}

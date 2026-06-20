@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+  <form hx-post="/jobs/{{ job.job_id }}/gate4/back" style="margin:0">
+    <button class="secondary" style="font-size:13px;padding:6px 12px;white-space:nowrap">← Gate 3 (B-roll)</button>
+  </form>
+  <h2 style="margin:0">Gate 4 — Caption Review: {{ job.title }}</h2>
+</div>
+<div class="card">
+  <video controls width="800" src="/jobs/{{ job.job_id }}/file/preview_captions.mp4"></video>
+</div>
+<div class="card">
+  <h3>Phrases</h3>
+  <p style="color:#6b7280;font-size:13px;margin-top:0">Click any word to toggle emphasis (yellow highlight). Use Reanalyze to re-run AI emphasis detection.</p>
+  {% for p in phrases %}
+  {% set phrase_idx = loop.index0 %}
+  <div style="margin:8px 0">
+    <code>{{ '%.2f' % p.start }} – {{ '%.2f' % p.end }}</code>
+    {% for w in p.words %}
+      <button class="secondary"
+              hx-post="/jobs/{{ job.job_id }}/gate4/toggle"
+              hx-vals='{"phrase_index":"{{ phrase_idx }}","word_index":"{{ loop.index0 }}"}'
+              hx-swap="none"
+              style="background: {{ '#f0a500' if w.emphasis else 'transparent' }};
+                     color: {{ 'white' if w.emphasis else '#111827' }};
+                     text-decoration: {{ 'underline' if w.emphasis else 'none' }};">{{ w.word }}</button>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+<form hx-post="/jobs/{{ job.job_id }}/gate4/decision" hx-swap="none">
+  <button name="action" value="approve" class="primary-action">Approve → Assembly</button>
+  <button name="action" value="rerender" class="secondary">Re-render preview</button>
+</form>
+<form hx-post="/jobs/{{ job.job_id }}/gate4/reanalyze" hx-swap="none" style="margin-top:8px">
+  <button class="secondary" style="color:#6366f1;border-color:#6366f1">✦ Reanalyze Emphasis</button>
+  <span style="color:#6b7280;font-size:13px;margin-left:8px">Updates highlighted words — then hit Re-render preview to see it in the video.</span>
+</form>
+{% endblock %}

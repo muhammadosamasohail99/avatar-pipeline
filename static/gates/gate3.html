@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+  <form hx-post="/jobs/{{ job.job_id }}/gate3/back" style="margin:0">
+    <button class="secondary" style="font-size:13px;padding:6px 12px;white-space:nowrap">← Gate 2 (Avatar)</button>
+  </form>
+  <h2 style="margin:0">Gate 3 — B-roll Review: {{ job.title }}</h2>
+</div>
+
+{% if job.visual_format != "Selfie" %}
+<div class="card">
+  <h3>Upload Screen Recording</h3>
+  <form hx-post="/jobs/{{ job.job_id }}/gate3/upload" hx-encoding="multipart/form-data" hx-swap="outerHTML">
+    <input type="file" name="file" accept=".mp4,.mov" required>
+    <button>Upload + transcode</button>
+  </form>
+</div>
+{% endif %}
+
+{% for s in suggestions %}
+{% set idx = loop.index0 %}
+{% include "gates/gate3_card.html" %}
+{% endfor %}
+
+<form hx-post="/jobs/{{ job.job_id }}/gate3/done" hx-swap="outerHTML" style="margin-top:8px">
+  <button class="primary-action">Approve all → Captions</button>
+</form>
+{% endblock %}

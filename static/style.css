@@ -1,0 +1,53 @@
+:root {
+  --bg: #f1f0ea;
+  --accent: #f05a43;
+  --dark: #0f1730;
+  --ink: #111827;
+  --body: #404a5c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font-family: Inter, system-ui, sans-serif; display: flex; min-height: 100vh; }
+.sidebar { width: 220px; background: var(--dark); color: var(--bg); padding: 24px; }
+.sidebar h1 { font-family: Archivo, sans-serif; font-weight: 800; font-size: 18px; margin: 0 0 24px; }
+.sidebar a { color: var(--bg); text-decoration: none; display: block; padding: 8px 0; }
+main { flex: 1; padding: 32px; }
+h2 { font-family: Archivo, sans-serif; font-weight: 800; }
+.badge { padding: 4px 10px; border-radius: 12px; font: 500 12px Source Code Pro, monospace;
+  background: var(--accent); color: white; }
+.badge.gray { background: #999; }
+.badge.green { background: #2a9d4a; }
+.badge.red { background: #c33; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px 8px; border-bottom: 1px solid #d8d6cc; text-align: left; }
+button { background: var(--accent); color: white; border: 0; padding: 10px 18px;
+  font: 500 14px Inter, sans-serif; border-radius: 6px; cursor: pointer; }
+button.secondary { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+.card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 16px; }
+.precheck { padding: 8px 12px; border-left: 3px solid var(--accent); margin: 6px 0;
+  background: rgba(240, 90, 67, 0.05); }
+.precheck.pass { border-color: #2a9d4a; background: rgba(42, 157, 74, 0.05); }
+.precheck.warn { border-color: #f5a623; background: rgba(245, 166, 35, 0.05); }
+.status-row { display: flex; align-items: center; gap: 14px; }
+.status-running { border-left: 3px solid var(--accent); }
+.status-done { border-left: 3px solid #2a9d4a; }
+.spinner { width: 22px; height: 22px; flex-shrink: 0; border: 3px solid #d8d6cc;
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+th[title] { cursor: help; border-bottom: 1px dashed #999; }
+
+/* ── Progress bar (indeterminate sweep) ── */
+.progress-wrap { background: #e8e6de; border-radius: 4px; height: 6px;
+  overflow: hidden; margin-bottom: 14px; }
+.progress-sweep { height: 100%; width: 40%; border-radius: 4px;
+  background: var(--accent);
+  animation: sweep 1.6s ease-in-out infinite; }
+@keyframes sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* ── Button loading state (HTMX adds .htmx-request to the form) ── */
+form.htmx-request button { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+form.htmx-request button.primary-action::after { content: " …"; }

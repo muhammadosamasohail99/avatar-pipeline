@@ -1,0 +1,108 @@
+{# Segment card fragment — used by gate3.html (include) and all gate3 HTMX actions #}
+<div class="card" id="seg-{{ idx }}">
+
+  {# Header #}
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+    <h3 style="margin:0">Segment {{ idx + 1 }}</h3>
+    {% if s.segment.is_hook %}<span class="badge">HOOK</span>{% endif %}
+    {% if s.picked == 'skip' %}<span class="badge gray">Skipped</span>{% endif %}
+    {% if s.picked is number %}<span class="badge green">Picked</span>{% endif %}
+    {% if s.flagged %}<span class="badge red">⚠ Flagged — replace B-roll</span>{% endif %}
+  </div>
+  <p style="margin:0 0 14px;font-size:13px;color:var(--muted)">{{ s.segment.text }}</p>
+
+  {# Timing controls #}
+  <form hx-post="/jobs/{{ job.job_id }}/gate3/timing"
+        hx-target="#seg-{{ idx }}" hx-swap="outerHTML"
+        style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;
+               padding:10px 12px;background:#f8f8f8;border-radius:6px;border:1px solid #e8e8e8">
+    <input type="hidden" name="segment_index" value="{{ idx }}">
+    <span style="font-size:12px;color:var(--muted);white-space:nowrap">B-roll window:</span>
+    <label style="font-size:13px;display:flex;align-items:center;gap:5px">
+      From
+      <input type="number" name="custom_start"
+             value="{{ '%.2f'|format(s.custom_start if s.custom_start is not none else s.segment.start) }}"
+             step="0.01" min="0" style="width:70px;padding:3px 6px">s
+    </label>
+    <label style="font-size:13px;display:flex;align-items:center;gap:5px">
+      to
+      <input type="number" name="custom_end"
+             value="{{ '%.2f'|format(s.custom_end if s.custom_end is not none else s.segment.end) }}"
+             step="0.01" min="0" style="width:70px;padding:3px 6px">s
+    </label>
+    <button class="secondary" style="font-size:12px;padding:4px 12px">Save timing</button>
+    <span style="font-size:11px;color:var(--muted)">(auto: {{ '%.1f'|format(s.segment.start) }}–{{ '%.1f'|format(s.segment.end) }}s)</span>
+  </form>
+
+  {# B-roll options #}
+  {% if s.options %}
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+    {% for opt in s.options %}
+    {% set opt_idx = loop.index0 %}
+    <div style="flex:1;min-width:220px;{% if s.picked == opt_idx %}outline:2px solid #0070f3;border-radius:8px;padding:8px{% endif %}">
+      {% if s.picked == opt_idx %}
+      <div style="font-size:11px;font-weight:700;color:#0070f3;margin-bottom:5px">✓ PICKED</div>
+      {% endif %}
+      <video src="{{ opt.url }}" controls muted preload="metadata"
+             style="width:100%;border-radius:4px;display:block"></video>
+      <div style="font-size:12px;margin:5px 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span>{{ opt.source }}</span>
+        {% set badge_cls = 'green' if opt.relevance >= 0.7 else ('gray' if opt.relevance >= 0.4 else 'red') %}
+        <span class="badge {{ badge_cls }}">{{ '%.2f' % opt.relevance }}</span>
+        {% if opt.duration %}<span style="color:var(--muted)">{{ opt.duration }}s</span>{% endif %}
+      </div>
+      {% if s.picked != opt_idx %}
+      <button hx-post="/jobs/{{ job.job_id }}/gate3/pick"
+              hx-vals='{"segment_index":"{{ idx }}","option_index":"{{ opt_idx }}"}'
+              hx-target="#seg-{{ idx }}" hx-swap="outerHTML">Pick</button>
+      {% else %}
+      <button class="secondary"
+              hx-post="/jobs/{{ job.job_id }}/gate3/unpick"
+              hx-vals='{"segment_index":"{{ idx }}"}'
+              hx-target="#seg-{{ idx }}" hx-swap="outerHTML"
+              style="font-size:12px">Unpick</button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="font-size:13px;color:var(--muted);margin:0 0 12px">
+    No B-roll found for this segment. Try requesting different options below.
+  </p>
+  {% endif %}
+
+  {# Action buttons #}
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="secondary"
+            hx-post="/jobs/{{ job.job_id }}/gate3/refresh"
+            hx-vals='{"segment_index":"{{ idx }}"}'
+            hx-target="#seg-{{ idx }}" hx-swap="outerHTML">↻ Request different</button>
+    {% if s.picked == 'skip' %}
+    <button class="secondary"
+            hx-post="/jobs/{{ job.job_id }}/gate3/unpick"
+            hx-vals='{"segment_index":"{{ idx }}"}'
+            hx-target="#seg-{{ idx }}" hx-swap="outerHTML">Unskip</button>
+    {% else %}
+    <button class="secondary"
+            hx-post="/jobs/{{ job.job_id }}/gate3/skip"
+            hx-vals='{"segment_index":"{{ idx }}"}'
+            hx-target="#seg-{{ idx }}" hx-swap="outerHTML">Skip</button>
+    {% endif %}
+  </div>
+
+  {# Per-segment upload #}
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;font-size:13px;color:var(--muted);user-select:none">
+      ⬆ Upload custom B-roll for this segment
+    </summary>
+    <form hx-post="/jobs/{{ job.job_id }}/gate3/upload-segment"
+          hx-encoding="multipart/form-data"
+          hx-target="#seg-{{ idx }}" hx-swap="outerHTML"
+          style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="hidden" name="segment_index" value="{{ idx }}">
+      <input type="file" name="file" accept=".mp4,.mov,.webm" required style="font-size:13px">
+      <button style="font-size:12px;padding:4px 12px">Upload + use</button>
+    </form>
+  </details>
+
+</div>

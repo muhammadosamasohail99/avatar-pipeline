@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+  <a href="/" style="font-size:13px;color:var(--body);text-decoration:none;white-space:nowrap">← Dashboard</a>
+  <h2 style="margin:0">Gate 1 — Audio Review: {{ job.title }}</h2>
+</div>
+<div class="card">
+  <audio id="player" controls src="/jobs/{{ job.job_id }}/file/voice.mp3" style="width:100%"></audio>
+  <div id="waveform" style="margin-top:12px"></div>
+</div>
+<div class="card">
+  <h3>Pre-checks</h3>
+  {% for c in checks %}
+    <div class="precheck {{ c.status }}">{{ c.message }}</div>
+  {% endfor %}
+</div>
+<div class="card">
+  <h3>Script</h3>
+  <pre style="white-space:pre-wrap">{{ script }}</pre>
+</div>
+<form hx-post="/jobs/{{ job.job_id }}/gate1/decision" hx-swap="outerHTML">
+  {% if looks %}
+  <div class="card" style="margin-bottom:16px">
+    <h3 style="margin:0 0 10px">Avatar Look</h3>
+    <select name="look_avatar_id" style="padding:8px 12px;border:1px solid #d8d6cc;border-radius:6px;font-size:14px;width:260px">
+      <option value="">Default</option>
+      {% for l in looks %}
+        <option value="{{ l.avatar_id }}" {% if job.look_avatar_id == l.avatar_id %}selected{% endif %}>{{ l.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <button name="action" value="approve" class="primary-action">Approve to HeyGen</button>
+  <button name="action" value="regenerate" class="secondary">Regenerate Voice</button>
+  <button name="action" value="edit" class="secondary">Edit Script (pause job)</button>
+</form>
+<script src="https://unpkg.com/wavesurfer.js@7"></script>
+<script>
+  const ws = WaveSurfer.create({container: '#waveform', waveColor: '#404a5c', progressColor: '#f05a43', height: 80});
+  ws.load('/jobs/{{ job.job_id }}/file/voice.mp3');
+</script>
+{% endblock %}
