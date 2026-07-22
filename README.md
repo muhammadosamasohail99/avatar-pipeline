@@ -2,12 +2,12 @@
 
 # Avatar Pipeline
 
-**End-to-end AI video production — script to delivered file, zero manual editing.**
+**AI video production pipeline — script in, review-ready draft out, a human in the loop at every stage.**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-required-007808?style=flat-square&logo=ffmpeg&logoColor=white)](https://ffmpeg.org)
-[![License](https://img.shields.io/badge/License-Private-red?style=flat-square)](#license)
+[![License](https://img.shields.io/badge/License-Personal_Project-blue?style=flat-square)](#license)
 
 </div>
 
@@ -41,11 +41,22 @@ Every stage runs async. The app polls Airtable every 5 minutes, processes up to 
 
 ---
 
+## Status
+
+All 6 pipeline stages (voice, avatar, B-roll, captions, assembly, export) are coded and wired end-to-end. Verified by running the suite directly rather than trusting a badge:
+
+- **36 of 41 tests passing.**
+- 2 known failures: a caption ASS-writer styling assertion out of date with the current markup, and an off-by-one in the gate-resume logic on job recovery.
+- 1 test file (`test_ingest.py`) currently fails to collect — it imports an `ALLOWED_FORMATS` constant that no longer exists in `pipeline/ingest.py`, left over from a refactor.
+- By design, background music, hook variants, and end cards are still added manually in CapCut after delivery — this pipeline produces the review-ready draft, not the final polished cut.
+
+---
+
 ## Features
 
 | | |
 |---|---|
-| **End-to-end automation** | Raw script → delivered video with no manual editing |
+| **6-stage automated draft** | Script → reviewable draft through voice, avatar, B-roll, captions, and assembly |
 | **6 review gates** | Approve, regenerate, or edit at every stage before advancing |
 | **Dual format export** | 16:9 master + 9:16 center-crop reframe, generated automatically |
 | **Smart captions** | Phrase-chunked subtitles with Gemini-powered emphasis highlighting |
@@ -109,7 +120,7 @@ pip install whisperx
 ## Quickstart
 
 ```bash
-git clone https://github.com/muhammadosamasohail99/avatar-pipeline.git
+git clone https://github.com/muhammadosamasohail/avatar-pipeline.git
 cd avatar-pipeline
 
 python -m venv venv
@@ -229,7 +240,7 @@ avatar-pipeline/
 │   ├── style.css
 │   └── gates/            # gate1.html – gate6.html
 │
-├── tests/                # pytest suite (all passing, no real credentials needed)
+├── tests/                # pytest suite, 36/41 passing — no real credentials needed
 ├── jobs/                 # Per-job working directories (auto-created)
 ├── archive/              # Jobs older than 30 days (auto-rotated)
 ├── assets/fonts/         # Inter .ttf files (add manually)
@@ -244,10 +255,10 @@ avatar-pipeline/
 pytest tests/ -v
 ```
 
-All tests pass. Every external API (ElevenLabs, HeyGen, Pexels, Runway, Dropbox, Gemini) is mocked — no real credentials needed to run the suite.
+36 of 41 pass. Every external API (ElevenLabs, HeyGen, Pexels, Runway, Dropbox, Gemini) is mocked — no real credentials needed to run the suite. See [Status](#status) for the 3 known open issues.
 
 ---
 
 ## License
 
-Private. All rights reserved.
+Personal project, built by Muhammad Osama Sohail. Not affiliated with ElevenLabs, HeyGen, Pexels, Runway, or Google.
